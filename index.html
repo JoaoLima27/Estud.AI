@@ -393,7 +393,7 @@
   //   const data = await r.json(); document.getElementById('typing')?.remove(); typeReply(data.reply);
   function enviar(texto){
     addMsg(texto,'me'); showTyping();
-    setTimeout(()=>{document.getElementById('typing')?.remove();typeReply('Em breve eu respondo de verdade ✨ Por enquanto sou só uma demonstração — logo a equipe vai me conectar via n8n pra te ajudar pra valer!');},1000);
+    setTimeout(()=>{document.getElementById('typing')?.remove();typeReply('Em breve eu respondo sua pergunta ✨ Por enquanto não estou conectada via n8n pra te ajudar pra valer!');},1000);
   }
   function handleSend(){const t=input.value.trim();if(!t)return;input.value='';sparkBurst();enviar(t);}
   btn.addEventListener('click',handleSend);
