@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Estud.AI — Conversar, Horários & Grades</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --faisca:#C9F24A;--ink:#100F18;--surface:#1a1828;--surface-2:#221F30;--text:#F4EEE1;--soft:rgba(244,238,225,.6);
+    --line:rgba(244,238,225,.1);--disp:'Bricolage Grotesque',sans-serif;--body:'Hanken Grotesk',sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  html,body{height:100%}
+  body{font-family:var(--body);background:radial-gradient(140% 100% at 80% -10%,#1d1a2e,#100F18 55%);color:var(--text);-webkit-font-smoothing:antialiased;overflow:hidden}
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .star{position:absolute;border-radius:50%;background:#fff;animation:tw var(--d) ease-in-out infinite}
+  @keyframes tw{0%,100%{opacity:.12;transform:scale(.7)}50%{opacity:.8;transform:scale(1)}}
+  .app{height:100dvh;display:flex;flex-direction:column;position:relative;z-index:2}
+
+  .topbar{height:62px;flex:0 0 auto;display:flex;align-items:center;gap:16px;padding:0 18px;border-bottom:1px solid var(--line);background:rgba(16,15,24,.72);backdrop-filter:blur(14px)}
+  .wm{font-family:var(--disp);font-weight:800;letter-spacing:-.035em;display:inline-flex;align-items:center;font-size:1.3rem}
+  .wm .sp{width:.4em;height:.4em;margin:0 .03em;transform:translateY(.04em)}.wm .sp path{fill:var(--faisca)}.wm .ai{color:var(--faisca)}
+  .tabs{display:flex;gap:4px;background:rgba(244,238,225,.06);border:1px solid var(--line);border-radius:30px;padding:4px}
+  .tab{font-family:var(--disp);font-weight:700;font-size:.86rem;padding:8px 16px;border-radius:30px;border:none;background:none;color:var(--soft);cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px}
+  .tab.active{background:var(--faisca);color:var(--ink)}
+  .tab .badge{background:rgba(16,15,24,.25);border-radius:20px;padding:1px 7px;font-size:.74rem}
+  .tab.active .badge{background:rgba(16,15,24,.18)}
+  .new-btn{margin-left:auto;font-family:var(--disp);font-weight:700;font-size:.84rem;padding:9px 14px;border-radius:11px;border:1px solid var(--line);background:var(--surface);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s}
+  .new-btn:hover{background:var(--faisca);color:var(--ink);border-color:var(--faisca)}
+  .new-btn svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+
+  .view{flex:1 1 auto;overflow-y:auto;display:none}
+  .view.on{display:flex;flex-direction:column}
+
+  #viewChat{position:relative}
+  .subjtag{position:sticky;top:0;z-index:5;display:none;align-items:center;gap:8px;align-self:center;margin:12px auto 0;background:var(--surface);border:1px solid var(--ac,var(--line));border-radius:30px;padding:6px 14px;font-size:.82rem;font-weight:600}
+  .subjtag.on{display:flex}
+  .subjtag .e{font-size:1rem}
+  .stream{width:100%;max-width:740px;margin:0 auto;padding:24px 18px 10px;display:flex;flex-direction:column;gap:16px;flex:1}
+  .welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:14px 0}
+  .welcome .big{width:150px;cursor:pointer}
+  .welcome h1{font-family:var(--disp);font-weight:800;font-size:clamp(1.6rem,4vw,2.1rem);letter-spacing:-.02em;margin:20px 0 8px}
+  .welcome p{color:var(--soft);max-width:44ch;margin:0 auto 26px}
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:11px;width:100%;max-width:580px}
+  .mode{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:15px 16px;cursor:pointer;transition:.2s;color:var(--text);position:relative;overflow:hidden}
+  .mode .mi{font-size:1.35rem;display:block;margin-bottom:7px}
+  .mode b{font-family:var(--disp);font-weight:700;display:block;font-size:.96rem;margin-bottom:3px}
+  .mode span:not(.mi){color:var(--soft);font-size:.8rem;line-height:1.35;display:block}
+  .mode::after{content:"";position:absolute;inset:0;border-radius:16px;border:1.5px solid var(--faisca);opacity:0;transition:.2s}
+  .mode:hover{transform:translateY(-2px);border-color:color-mix(in srgb,var(--faisca) 50%,var(--line))}
+  .mode.active{background:color-mix(in srgb,var(--faisca) 12%,var(--surface))}
+  .mode.active::after{opacity:1}
+  .modechip{max-width:740px;margin:0 auto 9px;display:none}
+  .modechip.on{display:flex;align-items:center;gap:9px}
+  .modechip .c{display:inline-flex;align-items:center;gap:8px;background:color-mix(in srgb,var(--faisca) 16%,var(--surface));border:1px solid var(--faisca);color:var(--text);border-radius:30px;padding:6px 8px 6px 13px;font-weight:600;font-size:.84rem}
+  .modechip .c b{font-family:var(--disp);font-weight:700}
+  .modechip .x{width:20px;height:20px;border:none;background:rgba(16,15,24,.35);border-radius:50%;color:var(--text);cursor:pointer;font-size:.8rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  .modechip .x:hover{background:rgba(16,15,24,.6)}
+  .floaty{animation:floaty 5s ease-in-out infinite}
+  @keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(2deg)}}
+  #eyesTrack{transition:transform .18s ease-out}
+  #eyesBlink{transform-box:fill-box;transform-origin:center;animation:blink 4.6s infinite}
+  @keyframes blink{0%,90%,100%{transform:scaleY(1)}94%,96%{transform:scaleY(.08)}}
+  .pop{animation:pop .6s cubic-bezier(.2,1.5,.4,1)}
+  @keyframes pop{0%{transform:scale(1)}30%{transform:scale(.86,1.12)}60%{transform:scale(1.06,.95)}100%{transform:scale(1)}}
+
+  .msg{display:flex;gap:10px;align-items:flex-end;max-width:88%;animation:msgIn .4s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .msg .av{width:30px;height:30px;border-radius:9px;background:radial-gradient(120% 120% at 30% 20%,#2a2838,#15141d);flex:0 0 auto;display:flex;align-items:center;justify-content:center}
+  .msg .av svg{width:80%;height:80%}
+  .bubble{padding:13px 16px;font-size:.96rem;line-height:1.55;border-radius:4px 16px 16px 16px;background:var(--surface);border:1px solid var(--line)}
+  .msg.bot .bubble b{color:var(--faisca);font-weight:700}
+  .bubble p{margin:0 0 .6em}.bubble p:last-child{margin-bottom:0}
+  .bubble ul,.bubble ol{margin:.35em 0 .65em;padding-left:1.35em}
+  .bubble ul:last-child,.bubble ol:last-child{margin-bottom:0}
+  .bubble li{margin:.22em 0;padding-left:.15em}
+  .bubble li::marker{color:var(--faisca)}
+  .msg.me{margin-left:auto;flex-direction:row-reverse}
+  .msg.me .bubble{background:var(--faisca);color:var(--ink);font-weight:500;border-radius:16px 16px 4px 16px;border:none}
+  .caret{display:inline-block;width:2px;height:1.05em;background:var(--faisca);margin-left:2px;vertical-align:-2px;animation:caret .7s steps(1) infinite}
+  @keyframes caret{50%{opacity:0}}
+  .typing{display:flex;gap:4px;padding:3px 0}
+  .typing span{width:7px;height:7px;border-radius:50%;background:var(--soft);animation:bounce 1.2s infinite}
+  .typing span:nth-child(2){animation-delay:.15s}.typing span:nth-child(3){animation-delay:.3s}
+  @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.5}30%{transform:translateY(-5px);opacity:1}}
+
+  /* Flashcards (modo da Faísca) */
+  .msg.bot .bubble.fcwrap{width:min(420px,78vw);padding:13px}
+  .fcintro{font-size:.84rem;color:var(--soft);margin-bottom:11px}
+  .deck{display:flex;flex-direction:column;gap:9px}
+  .fcard{border:1px solid var(--line);border-left:3px solid var(--faisca);border-radius:13px;background:var(--ink);padding:12px 14px;cursor:pointer;transition:border-color .18s,transform .18s}
+  .fcard:hover{border-color:color-mix(in srgb,var(--faisca) 55%,var(--line));transform:translateY(-1px)}
+  .fcard .q{font-weight:600;font-size:.92rem;line-height:1.4;display:flex;gap:9px}
+  .fcard .q .n{font-family:var(--disp);font-weight:800;color:var(--faisca);flex:0 0 auto}
+  .fcard .rev{font-family:var(--disp);font-weight:700;font-size:.72rem;color:var(--faisca);margin-top:9px;display:inline-block}
+  .fcard.open .rev{display:none}
+  .fcard .a{font-size:.89rem;line-height:1.45;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line);display:none}
+  .fcard.open .a{display:block;animation:msgIn .3s ease}
+
+  /* Modo Prova (cartão de questão) */
+  .msg.bot .bubble.quizwrap{width:min(440px,80vw);padding:14px}
+  .qtag{font-family:var(--disp);font-weight:700;font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--faisca);margin-bottom:9px}
+  .qq{font-weight:600;font-size:.96rem;line-height:1.45;margin-bottom:12px}
+  .qopts{display:flex;flex-direction:column;gap:8px}
+  .qopt{display:flex;align-items:flex-start;gap:10px;text-align:left;background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:11px 13px;color:var(--text);font-family:var(--body);font-size:.9rem;line-height:1.35;cursor:pointer;transition:.15s;width:100%}
+  .qopt:hover:not(:disabled){border-color:color-mix(in srgb,var(--faisca) 55%,var(--line));transform:translateX(2px)}
+  .qopt .ql{font-family:var(--disp);font-weight:800;color:var(--faisca);flex:0 0 auto;width:18px}
+  .qopt.locked{cursor:default}.qopt:disabled{opacity:.9}
+  .qopt.right{border-color:#36D6A0;background:color-mix(in srgb,#36D6A0 16%,var(--ink))}.qopt.right .ql{color:#36D6A0}
+  .qopt.wrong{border-color:#FF8FB1;background:color-mix(in srgb,#FF8FB1 14%,var(--ink))}.qopt.wrong .ql{color:#FF8FB1}
+  .qres{font-family:var(--disp);font-weight:700;font-size:.92rem;margin-top:13px}
+  .qres.ok{color:#36D6A0}.qres.no{color:#FF8FB1}
+  .qexp{font-size:.86rem;line-height:1.45;margin-top:8px;padding-top:9px;border-top:1px dashed var(--line)}
+  .qbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:13px}
+  .qscore{font-size:.78rem;color:var(--soft);font-weight:600}
+  .qnext{border:none;background:var(--faisca);color:var(--ink);font-family:var(--disp);font-weight:700;font-size:.8rem;padding:8px 14px;border-radius:10px;cursor:pointer;transition:transform .15s}
+  .qnext:hover{transform:translateY(-1px)}
+
+  .composer{flex:0 0 auto;border-top:1px solid var(--line);background:rgba(16,15,24,.72);backdrop-filter:blur(10px);padding:14px 18px}
+  .composer-inner{max-width:740px;margin:0 auto;display:flex;align-items:flex-end;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:8px 8px 8px 16px;transition:border-color .2s}
+  .composer-inner:focus-within{border-color:var(--faisca)}
+  textarea{flex:1;border:none;background:transparent;resize:none;outline:none;color:var(--text);font-family:var(--body);font-size:1rem;line-height:1.5;max-height:140px;padding:8px 0}
+  textarea::placeholder{color:var(--soft)}
+  .send{width:42px;height:42px;border-radius:13px;background:var(--faisca);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex:0 0 auto;transition:transform .15s}
+  .send:hover{transform:scale(1.07) rotate(8deg)}.send:disabled{opacity:.4;transform:none;cursor:default}
+  .send svg{width:19px;height:19px;fill:var(--ink)}
+  .hint{max-width:740px;margin:8px auto 0;text-align:center;font-size:.76rem;color:var(--soft)}
+
+  .hwrap{width:100%;max-width:1180px;margin:0 auto;padding:24px 18px 80px}
+  .hintro h2{font-family:var(--disp);font-weight:800;font-size:clamp(1.5rem,3.5vw,2.2rem);letter-spacing:-.02em}
+  .hintro p{color:var(--soft);margin-top:8px;max-width:56ch}
+  .boards{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:26px;align-items:stretch}
+  .board{background:linear-gradient(180deg,rgba(244,238,225,.045),rgba(244,238,225,.02));border:1px solid var(--line);border-radius:20px;padding:18px;position:relative;overflow:hidden;min-height:210px;display:flex;flex-direction:column;transition:border-color .3s,transform .3s,box-shadow .3s}
+  .board:hover{transform:translateY(-3px);border-color:var(--ac);box-shadow:0 18px 40px rgba(0,0,0,.3)}
+  .board::before{content:"";position:absolute;width:140px;height:140px;border-radius:50%;background:radial-gradient(circle,var(--ac),transparent 65%);top:-60px;right:-40px;opacity:.16}
+  .bd-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;z-index:1}
+  .bd-emoji{width:96px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:color-mix(in srgb,var(--ac) 13%,transparent);border:1px solid color-mix(in srgb,var(--ac) 32%,transparent);flex:0 0 auto;overflow:hidden;padding:5px}
+  .bd-emoji svg{width:100%;height:100%;display:block}
+  .bd-meta{min-width:0}
+  .bd-title{font-family:var(--disp);font-weight:700;font-size:1.06rem;line-height:1}
+  .bd-sub{font-size:.74rem;color:var(--soft);margin-top:3px}
+  .bd-count{margin-left:auto;font-family:var(--disp);font-weight:700;font-size:.8rem;color:var(--ac);background:color-mix(in srgb,var(--ac) 14%,transparent);border-radius:20px;padding:4px 10px}
+  .hcards{display:flex;flex-direction:column;gap:8px;position:relative;z-index:1}
+  .hcard{text-align:left;background:rgba(244,238,225,.04);border:1px solid var(--line);border-left:3px solid var(--ac);border-radius:11px;padding:11px 13px;cursor:pointer;transition:.2s}
+  .hcard:hover{background:color-mix(in srgb,var(--ac) 12%,transparent);transform:translateX(3px)}
+  .hcard .ht{font-weight:600;font-size:.9rem;line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+  .hcard .hm{font-size:.74rem;color:var(--soft);margin-top:4px;display:flex;gap:10px}
+  .empty{font-size:.82rem;color:var(--soft);padding:10px 2px;font-style:italic}
+
+  .toast{position:fixed;bottom:84px;left:50%;transform:translate(-50%,12px);background:var(--surface);border:1px solid var(--ac,var(--faisca));color:var(--text);border-radius:30px;padding:10px 18px;font-weight:600;font-size:.86rem;z-index:120;opacity:0;pointer-events:none;transition:.3s;display:flex;align-items:center;gap:8px;box-shadow:0 14px 30px rgba(0,0,0,.4)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .burst{position:fixed;pointer-events:none;width:14px;z-index:130}.burst path{fill:var(--faisca)}
+  @keyframes bz{from{transform:translate(0,0) scale(.3);opacity:1}to{transform:translate(var(--bx),var(--by)) scale(1);opacity:0}}
+
+  /* ---- Horários (grade da semana) ---- */
+  .swrap{width:100%;max-width:1180px;margin:0 auto;padding:24px 18px 90px}
+  .sintro{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+  .sintro h2{font-family:var(--disp);font-weight:800;font-size:clamp(1.5rem,3.5vw,2.2rem);letter-spacing:-.02em}
+  .sintro p{color:var(--soft);margin-top:8px;max-width:54ch}
+  .add-block{margin-left:auto;font-family:var(--disp);font-weight:700;font-size:.9rem;padding:11px 18px;border-radius:13px;border:none;background:var(--faisca);color:var(--ink);cursor:pointer;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .2s;box-shadow:0 8px 22px rgba(201,242,74,.18)}
+  .add-block:hover{transform:translateY(-2px)}
+  .add-block svg{width:16px;height:16px;stroke:var(--ink);fill:none;stroke-width:2.6;stroke-linecap:round}
+  .sstats{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 16px;min-height:1px}
+  .spill{font-size:.8rem;color:var(--soft);background:rgba(244,238,225,.05);border:1px solid var(--line);border-radius:30px;padding:6px 14px}
+  .spill b{color:var(--text);font-family:var(--disp);font-weight:700}
+  .sgrid{display:grid;grid-template-columns:repeat(7,minmax(150px,1fr));gap:10px;overflow-x:auto;padding-bottom:8px}
+  .daycol{background:linear-gradient(180deg,rgba(244,238,225,.04),rgba(244,238,225,.015));border:1px solid var(--line);border-radius:16px;padding:10px;min-height:170px;display:flex;flex-direction:column;gap:8px}
+  .daycol.today{border-color:var(--faisca);box-shadow:0 0 0 1px rgba(201,242,74,.22) inset}
+  .dayhead{display:flex;align-items:center;justify-content:space-between;font-family:var(--disp);font-weight:700;font-size:.84rem;padding:2px 4px 8px;border-bottom:1px solid var(--line)}
+  .dayhead .today-dot{font-size:.64rem;color:var(--ink);background:var(--faisca);border-radius:20px;padding:2px 8px;font-weight:700}
+  .blk{position:relative;border:1px solid var(--ac);border-left:4px solid var(--ac);background:color-mix(in srgb,var(--ac) 12%,transparent);border-radius:11px;padding:8px 10px 9px;transition:.18s}
+  .blk:hover{background:color-mix(in srgb,var(--ac) 20%,transparent)}
+  .blk.done{opacity:.5}.blk.done .bk{text-decoration:line-through}
+  .blktop{display:flex;align-items:center;gap:7px}
+  .chk{width:18px;height:18px;flex:0 0 auto;border:1.6px solid var(--ac);background:none;border-radius:6px;color:transparent;cursor:pointer;font-size:.66rem;line-height:1;display:flex;align-items:center;justify-content:center;transition:.15s}
+  .chk:hover{background:color-mix(in srgb,var(--ac) 22%,transparent)}
+  .chk.on{background:var(--ac);color:#15141d}
+  .blk .bt{font-family:var(--disp);font-weight:700;font-size:.73rem;color:var(--ac);display:flex;align-items:center;gap:5px;flex:1;white-space:nowrap}
+  .acts{display:flex;gap:3px;opacity:0;transition:.15s}
+  .blk:hover .acts{opacity:1}
+  .acts button{width:20px;height:20px;border:none;background:rgba(16,15,24,.5);border-radius:6px;color:var(--soft);cursor:pointer;font-size:.7rem;line-height:1;display:flex;align-items:center;justify-content:center}
+  .acts button:hover{color:var(--text);background:rgba(16,15,24,.85)}.acts .delx:hover{color:#FF8FB1}
+  .blk .bk{font-weight:600;font-size:.86rem;margin-top:5px;line-height:1.25}
+  .blkbot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:5px}
+  .blk .bd2{font-size:.7rem;color:var(--soft)}
+  .study{border:none;background:none;color:var(--ac);font-family:var(--disp);font-weight:700;font-size:.71rem;cursor:pointer;padding:2px 5px;border-radius:6px;transition:.15s;flex:0 0 auto}
+  .study:hover{background:color-mix(in srgb,var(--ac) 18%,transparent)}
+  .prog{display:flex;align-items:center;gap:8px}
+  .pbar{width:64px;height:6px;border-radius:6px;background:rgba(244,238,225,.12);overflow:hidden;display:inline-block}
+  .pbar>span{display:block;height:100%;background:var(--faisca);border-radius:6px;transition:width .35s}
+  .daycol .none{font-size:.74rem;color:var(--soft);font-style:italic;padding:6px 4px;opacity:.6}
+  .sempty{text-align:center;padding:54px 20px;color:var(--soft)}
+  .sempty .em{font-size:2.4rem}
+  .sempty h3{font-family:var(--disp);color:var(--text);font-weight:700;margin:10px 0 6px;font-size:1.2rem}
+
+  /* modal */
+  .modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(8,8,14,.62);backdrop-filter:blur(4px)}
+  .modal.on{display:flex}
+  .sheet{width:100%;max-width:440px;background:var(--surface-2);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.5);animation:sheetIn .25s cubic-bezier(.2,.8,.2,1)}
+  @keyframes sheetIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:none}}
+  .sheet h3{font-family:var(--disp);font-weight:800;font-size:1.25rem;letter-spacing:-.01em}
+  .sheet .fld{margin-top:14px}
+  .sheet label{display:block;font-size:.78rem;color:var(--soft);font-weight:600;margin-bottom:6px}
+  .sheet input,.sheet select{width:100%;background:var(--ink);border:1px solid var(--line);border-radius:11px;padding:11px 12px;color:var(--text);font-family:var(--body);font-size:.94rem;outline:none;transition:border-color .2s}
+  .sheet input:focus,.sheet select:focus{border-color:var(--faisca)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sheet-actions{display:flex;gap:10px;margin-top:20px}
+  .btn-ghost{flex:1;padding:12px;border-radius:12px;border:1px solid var(--line);background:none;color:var(--text);font-family:var(--disp);font-weight:700;cursor:pointer;transition:.2s}
+  .btn-ghost:hover{background:rgba(244,238,225,.06)}
+  .btn-primary{flex:1.3;padding:12px;border-radius:12px;border:none;background:var(--faisca);color:var(--ink);font-family:var(--disp);font-weight:700;cursor:pointer;transition:transform .15s}
+  .btn-primary:hover{transform:translateY(-1px)}
+  /* ============ RESPONSIVO: tablet e celular ============ */
+
+  /* Tablet (≤900px) */
+  @media(max-width:900px){
+    .boards{grid-template-columns:repeat(2,1fr)}
+  }
+
+  /* Tablet retrato / celular grande (≤640px) */
+  @media(max-width:640px){
+    .topbar{height:56px;gap:10px;padding:0 12px}
+    .wm{font-size:1.15rem}
+    .tabs{gap:2px;padding:3px}
+    .tab{padding:8px 11px;font-size:.82rem;gap:5px}
+    .new-btn{padding:8px 11px;font-size:.8rem}
+    .stream{padding:18px 14px 8px;gap:14px}
+    .hwrap{padding:20px 14px 80px}
+    .swrap{padding:20px 14px 90px}
+    .boards{grid-template-columns:1fr}
+    .modes{grid-template-columns:1fr}
+    .msg{max-width:94%}
+    .composer{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
+    .hint{margin-top:6px}
+    /* grade da semana empilha em lista vertical */
+    .sgrid{grid-template-columns:1fr;overflow-x:visible;gap:12px}
+    .daycol{min-height:auto}
+    .sintro{align-items:flex-start}
+    .add-block{margin-left:0;width:100%;justify-content:center}
+    .bubble.quizwrap,.bubble.fcwrap{width:auto;max-width:100%}
+  }
+
+  /* Celular (≤480px): abas viram só ícones */
+  @media(max-width:480px){
+    .tab .tl{display:none}
+    .tab{padding:9px 12px;font-size:1rem;gap:0}
+    .new-btn .tl{display:none}
+    .new-btn{padding:9px 11px}
+    .new-btn svg{width:17px;height:17px}
+    .welcome .big{width:124px}
+    .welcome h1{margin-top:16px}
+  }
+
+  /* Campos do modal empilham em telas bem estreitas */
+  @media(max-width:440px){.row2{grid-template-columns:1fr}}
+
+  /* Modal vira bottom-sheet no celular */
+  @media(max-width:560px){
+    .modal{align-items:flex-end;padding:0}
+    .sheet{max-width:none;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));animation:sheetUp .28s cubic-bezier(.2,.8,.2,1)}
+  }
+  @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+
+  /* Touch: sem hover, mostrar as ações dos blocos sempre */
+  @media(hover:none){
+    .acts{opacity:1}
+    .blk .bt{white-space:normal}
+  }
+
+  @media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+<div id="stars"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <radialGradient id="bodyGrad" cx="36%" cy="26%" r="82%"><stop offset="0%" stop-color="#EEFFA3"/><stop offset="48%" stop-color="#C9F24A"/><stop offset="100%" stop-color="#8FB820"/></radialGradient>
+  <linearGradient id="vHi" gradientUnits="userSpaceOnUse" x1="120" y1="12" x2="120" y2="130"><stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
+  <linearGradient id="vShade" gradientUnits="userSpaceOnUse" x1="120" y1="120" x2="120" y2="228"><stop offset="0%" stop-color="#5E7E12" stop-opacity="0"/><stop offset="100%" stop-color="#5E7E12" stop-opacity=".6"/></linearGradient>
+  <linearGradient id="armGrad" gradientUnits="userSpaceOnUse" x1="120" y1="100" x2="120" y2="160"><stop offset="0%" stop-color="#D7F86A"/><stop offset="100%" stop-color="#9CC528"/></linearGradient>
+  <linearGradient id="frameGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#46445a"/><stop offset="100%" stop-color="#1C1B26"/></linearGradient>
+  <radialGradient id="eyeGrad" cx="38%" cy="32%" r="75%"><stop offset="0%" stop-color="#4a4858"/><stop offset="100%" stop-color="#15141d"/></radialGradient>
+  <filter id="soft" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="7"/></filter>
+  <filter id="cast" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6"/></filter>
+  <symbol id="faisca3d" viewBox="0 0 240 264">
+    <ellipse cx="120" cy="250" rx="62" ry="11" fill="#0a0a0f" opacity=".22" filter="url(#cast)"/>
+    <path d="M72 152 Q50 132 46 106" stroke="url(#armGrad)" stroke-width="16" fill="none" stroke-linecap="round"/><circle cx="46" cy="102" r="14" fill="url(#bodyGrad)"/>
+    <path d="M168 152 Q190 132 194 106" stroke="url(#armGrad)" stroke-width="16" fill="none" stroke-linecap="round"/><circle cx="194" cy="102" r="14" fill="url(#bodyGrad)"/>
+    <path id="bp" d="M120 12 C133 70 170 107 228 120 C170 133 133 170 120 228 C107 170 70 133 12 120 C70 107 107 70 120 12 Z" fill="url(#bodyGrad)"/>
+    <use href="#bp" fill="url(#vShade)"/><use href="#bp" fill="url(#vHi)"/>
+    <ellipse cx="84" cy="58" rx="26" ry="16" fill="#fff" opacity=".5" filter="url(#soft)"/><circle cx="96" cy="52" r="5" fill="#fff" opacity=".9"/>
+    <ellipse cx="66" cy="142" rx="13" ry="8" fill="#E08A5B" opacity=".5"/><ellipse cx="174" cy="142" rx="13" ry="8" fill="#E08A5B" opacity=".5"/>
+    <circle cx="96" cy="120" r="26" fill="#fff" opacity=".14"/><circle cx="148" cy="120" r="26" fill="#fff" opacity=".14"/>
+    <circle cx="96" cy="122" r="9.5" fill="url(#eyeGrad)"/><circle cx="148" cy="122" r="9.5" fill="url(#eyeGrad)"/>
+    <circle cx="92" cy="118" r="3" fill="#fff"/><circle cx="144" cy="118" r="3" fill="#fff"/>
+    <circle cx="96" cy="120" r="26" fill="none" stroke="url(#frameGrad)" stroke-width="7"/><circle cx="148" cy="120" r="26" fill="none" stroke="url(#frameGrad)" stroke-width="7"/>
+    <line x1="119" y1="116" x2="125" y2="116" stroke="url(#frameGrad)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M98 150 Q122 158 146 150 C144 174 128 182 122 182 C116 182 100 174 98 150 Z" fill="#15141d"/>
+    <path d="M104 168 Q122 184 140 168 Q122 178 104 168 Z" fill="#E08A5B"/>
+  </symbol>
+  <symbol id="faiscaEyes" viewBox="0 0 240 264">
+    <ellipse cx="120" cy="250" rx="62" ry="11" fill="#0a0a0f" opacity=".22" filter="url(#cast)"/>
+    <path d="M72 152 Q50 132 46 106" stroke="url(#armGrad)" stroke-width="16" fill="none" stroke-linecap="round"/><circle cx="46" cy="102" r="14" fill="url(#bodyGrad)"/>
+    <path d="M168 152 Q190 132 194 106" stroke="url(#armGrad)" stroke-width="16" fill="none" stroke-linecap="round"/><circle cx="194" cy="102" r="14" fill="url(#bodyGrad)"/>
+    <path id="bp2" d="M120 12 C133 70 170 107 228 120 C170 133 133 170 120 228 C107 170 70 133 12 120 C70 107 107 70 120 12 Z" fill="url(#bodyGrad)"/>
+    <use href="#bp2" fill="url(#vShade)"/><use href="#bp2" fill="url(#vHi)"/>
+    <ellipse cx="84" cy="58" rx="26" ry="16" fill="#fff" opacity=".5" filter="url(#soft)"/><circle cx="96" cy="52" r="5" fill="#fff" opacity=".9"/>
+    <ellipse cx="66" cy="142" rx="13" ry="8" fill="#E08A5B" opacity=".5"/><ellipse cx="174" cy="142" rx="13" ry="8" fill="#E08A5B" opacity=".5"/>
+    <circle cx="96" cy="120" r="26" fill="#fff" opacity=".14"/><circle cx="148" cy="120" r="26" fill="#fff" opacity=".14"/>
+    <g id="eyesTrack"><g id="eyesBlink">
+      <circle cx="96" cy="122" r="9.5" fill="url(#eyeGrad)"/><circle cx="148" cy="122" r="9.5" fill="url(#eyeGrad)"/>
+      <circle cx="92" cy="118" r="3" fill="#fff"/><circle cx="144" cy="118" r="3" fill="#fff"/>
+    </g></g>
+    <circle cx="96" cy="120" r="26" fill="none" stroke="url(#frameGrad)" stroke-width="7"/><circle cx="148" cy="120" r="26" fill="none" stroke="url(#frameGrad)" stroke-width="7"/>
+    <line x1="119" y1="116" x2="125" y2="116" stroke="url(#frameGrad)" stroke-width="7" stroke-linecap="round"/>
+    <path d="M98 150 Q122 158 146 150 C144 174 128 182 122 182 C116 182 100 174 98 150 Z" fill="#15141d"/>
+    <path d="M104 168 Q122 184 140 168 Q122 178 104 168 Z" fill="#E08A5B"/>
+  </symbol>
+  <symbol id="sparkle" viewBox="0 0 100 100"><path d="M50 4C54 32 68 46 96 50C68 54 54 68 50 96C46 68 32 54 4 50C32 46 46 32 50 4Z"/></symbol>
+
+  <!-- Faísca pequena reutilizável (corpo lime + óculos + sorriso) -->
+  <symbol id="fxmini" viewBox="0 0 100 100">
+    <use href="#sparkle" fill="url(#bodyGrad)"/>
+    <circle cx="38" cy="53" r="11" fill="#14131c"/><circle cx="62" cy="53" r="11" fill="#14131c"/>
+    <line x1="49" y1="52" x2="51" y2="52" stroke="#14131c" stroke-width="3"/>
+    <circle cx="38" cy="51" r="3.2" fill="#fff"/><circle cx="62" cy="51" r="3.2" fill="#fff"/>
+    <circle cx="38.8" cy="51.8" r="1.2" fill="#14131c"/><circle cx="62.8" cy="51.8" r="1.2" fill="#14131c"/>
+    <path d="M44 70 Q50 76 57 70" stroke="#14131c" stroke-width="3.2" fill="none" stroke-linecap="round"/>
+  </symbol>
+
+  <!-- Faísca + elemento de cada matéria -->
+  <symbol id="fx-mat" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(64,18)"><rect x="0" y="6" width="60" height="46" rx="7" fill="#15141d" stroke="#C9F24A" stroke-width="2.6"/>
+      <path d="M13 44 L13 17 L42 44 Z" fill="none" stroke="#C9F24A" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="13" y="38" width="6" height="6" fill="none" stroke="#C9F24A" stroke-width="2"/>
+      <text x="40" y="24" font-family="'Bricolage Grotesque',sans-serif" font-weight="800" font-size="13" fill="#C9F24A">x²</text></g>
+  </symbol>
+  <symbol id="fx-bio" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(72,16)"><path d="M6 50 C4 16 38 8 50 6 C48 18 40 52 8 52 C6.5 52 6 51 6 50 Z" fill="#36D6A0" opacity=".24" stroke="#36D6A0" stroke-width="2.6"/>
+      <path d="M10 48 C22 32 38 16 48 8" fill="none" stroke="#36D6A0" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M18 41 l9 -4 M25 33 l9 -4 M32 25 l8 -4" stroke="#36D6A0" stroke-width="1.8" stroke-linecap="round"/></g>
+  </symbol>
+  <symbol id="fx-his" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(80,14)"><rect x="2" y="12" width="40" height="7" rx="2.5" fill="#F0A85E"/><rect x="2" y="54" width="40" height="7" rx="2.5" fill="#F0A85E"/>
+      <rect x="8" y="19" width="6" height="35" fill="#F0A85E" opacity=".85"/><rect x="19" y="19" width="6" height="35" fill="#F0A85E" opacity=".85"/><rect x="30" y="19" width="6" height="35" fill="#F0A85E" opacity=".85"/></g>
+  </symbol>
+  <symbol id="fx-qui" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(80,10)"><path d="M14 46 L42 46 L48 58 a6 6 0 0 1 -5 9 L13 67 a6 6 0 0 1 -5 -9 Z" fill="#B69CFF" opacity=".32"/>
+      <path d="M20 9 L20 28 L8 56 a6 6 0 0 0 5 9 L43 65 a6 6 0 0 0 5 -9 L36 28 L36 9 Z" fill="none" stroke="#B69CFF" stroke-width="2.6" stroke-linejoin="round"/>
+      <rect x="17" y="5" width="22" height="6" rx="2.5" fill="#B69CFF"/>
+      <circle cx="24" cy="54" r="2.4" fill="#B69CFF"/><circle cx="33" cy="58" r="1.8" fill="#B69CFF"/><circle cx="28" cy="49" r="1.4" fill="#B69CFF"/></g>
+  </symbol>
+  <symbol id="fx-fis" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(96,46)"><g stroke="#5CB8F7" stroke-width="2.4" fill="none"><ellipse rx="27" ry="10"/><ellipse rx="27" ry="10" transform="rotate(60)"/><ellipse rx="27" ry="10" transform="rotate(120)"/></g>
+      <circle r="5.5" fill="#5CB8F7"/><circle cx="27" cy="0" r="3" fill="#5CB8F7"/><circle cx="-13.5" cy="23" r="2.6" fill="#5CB8F7"/></g>
+  </symbol>
+  <symbol id="fx-red" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(70,16)"><line x1="4" y1="16" x2="44" y2="16" stroke="#FF8FB1" stroke-width="2.6" stroke-linecap="round"/>
+      <line x1="4" y1="27" x2="48" y2="27" stroke="#FF8FB1" stroke-width="2.6" stroke-linecap="round" opacity=".55"/>
+      <line x1="4" y1="38" x2="34" y2="38" stroke="#FF8FB1" stroke-width="2.6" stroke-linecap="round" opacity=".55"/>
+      <g transform="translate(30,40) rotate(-42)"><rect x="0" y="-4" width="28" height="8" rx="2.5" fill="#FF8FB1"/><path d="M28 -5 L40 0 L28 5 Z" fill="#FF8FB1"/></g></g>
+  </symbol>
+  <symbol id="fx-geo" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(96,46)" stroke="#7FE06A" fill="none" stroke-width="2.3"><circle r="27"/><ellipse rx="11" ry="27"/><line x1="-27" y1="0" x2="27" y2="0"/>
+      <path d="M-25 -13 a42 42 0 0 1 50 0 M-25 13 a42 42 0 0 0 50 0" stroke-width="1.6"/>
+      <path d="M-9 -6 q7 -5 12 2 q-2 7 -9 5 z" fill="#7FE06A" opacity=".5" stroke="none"/></g>
+  </symbol>
+  <symbol id="fx-ing" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(72,18)"><path d="M14 32 L14 52 L30 40 Z" fill="#F5C84B" opacity=".16" stroke="#F5C84B" stroke-width="2.5" stroke-linejoin="round"/>
+      <rect x="0" y="0" width="58" height="42" rx="12" fill="#15141d" stroke="#F5C84B" stroke-width="2.6"/>
+      <text x="29" y="28" text-anchor="middle" font-family="'Bricolage Grotesque',sans-serif" font-weight="800" font-size="19" fill="#F5C84B">Hi!</text></g>
+  </symbol>
+  <symbol id="fx-ger" viewBox="0 0 132 92">
+    <use href="#fxmini" x="0" y="18" width="58" height="58"/>
+    <g transform="translate(70,20)"><path d="M28 10 C20 4 9 4 3 8 L3 40 C9 36 20 36 28 42 Z" fill="#9aa0b0" opacity=".22" stroke="#9aa0b0" stroke-width="2.4" stroke-linejoin="round"/>
+      <path d="M28 10 C36 4 47 4 53 8 L53 40 C47 36 36 36 28 42 Z" fill="#9aa0b0" opacity=".22" stroke="#9aa0b0" stroke-width="2.4" stroke-linejoin="round"/>
+      <line x1="28" y1="10" x2="28" y2="42" stroke="#9aa0b0" stroke-width="2.4"/>
+      <use href="#sparkle" x="40" y="-10" width="18" height="18" fill="#C9F24A"/></g>
+  </symbol>
+</defs></svg>
+
+<div class="app">
+  <header class="topbar">
+    <span class="wm">Estud<svg class="sp"><use href="#sparkle"/></svg><span class="ai">AI</span></span>
+    <div class="tabs">
+      <button class="tab active" data-view="chat">💬 <span class="tl">Conversar</span></button>
+      <button class="tab" data-view="sched">🗓️ <span class="tl">Horários</span></button>
+      <button class="tab" data-view="hist">🗂️ <span class="tl">Grades</span> <span class="badge" id="histCount">0</span></button>
+    </div>
+    <button class="new-btn" id="newBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> <span class="tl">Novo</span></button>
+  </header>
+
+  <!-- CHAT -->
+  <section class="view on" id="viewChat">
+    <div class="subjtag" id="subjTag"></div>
+    <div class="stream">
+      <div class="welcome" id="welcome">
+        <svg class="big floaty" id="heroMascot" viewBox="0 0 240 264"><use href="#faiscaEyes"/></svg>
+        <h1>O que vamos estudar hoje?</h1>
+        <p>Escolha um <b>jeito de estudar</b> com a Faísca, ou só mande sua pergunta. ✨</p>
+        <div class="modes">
+          <button class="mode" data-mode="prova"><span class="mi">🎯</span><b>Modo Prova</b><span>A Faísca te testa com questões e corrige na hora</span></button>
+          <button class="mode" data-mode="flash"><span class="mi">🃏</span><b>Flashcards</b><span>Vira qualquer tema em cartões de revisão</span></button>
+          <button class="mode" data-mode="camadas"><span class="mi">🪜</span><b>Explica em camadas</b><span>Do simples ao avançado, no seu tempo</span></button>
+          <button class="mode" data-mode="cacaerro"><span class="mi">🔍</span><b>Caça-erro</b><span>Cole sua resposta e veja onde melhorar</span></button>
+        </div>
+      </div>
+      <div id="messages" style="display:flex;flex-direction:column;gap:16px"></div>
+    </div>
+    <div class="composer">
+      <div class="modechip" id="modeChip"></div>
+      <div class="composer-inner">
+        <textarea id="input" rows="1" placeholder="Pergunte qualquer coisa pra Faísca..."></textarea>
+        <button class="send" id="send" disabled aria-label="Enviar"><svg viewBox="0 0 24 24"><path d="M3 11.5 21 3l-8.5 18-2.2-7.3L3 11.5z"/></svg></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HISTÓRICO -->
+  <section class="view" id="viewHist">
+    <div class="hwrap">
+      <div class="hintro">
+        <h2>Suas grades de estudo</h2>
+        <p>Tudo que você conversa com a Faísca aparece aqui, separado por matéria. Clique numa faísca pra retomar a conversa de onde parou.</p>
+      </div>
+      <div class="boards" id="boards"></div>
+    </div>
+  </section>
+
+  <!-- HORÁRIOS -->
+  <section class="view" id="viewSched">
+    <div class="swrap">
+      <div class="sintro">
+        <div>
+          <h2>Sua semana de estudos</h2>
+          <p>Monte sua grade: escolha o dia, o horário e a matéria. Toque num bloco pra estudar aquele tópico com a Faísca. 🗓️</p>
+        </div>
+        <button class="add-block" id="addBlockBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Adicionar bloco</button>
+      </div>
+      <div class="sstats" id="sstats"></div>
+      <div class="sgrid" id="sgrid"></div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3 id="mTitle">Novo bloco de estudo</h3>
+    <div class="fld"><label>Matéria</label><select id="mSubject"></select></div>
+    <div class="fld"><label>Tópico (opcional)</label><input id="mTopic" type="text" placeholder="Ex.: Funções do 1º grau" maxlength="60"></div>
+    <div class="fld"><label>Dia da semana</label><select id="mDay"></select></div>
+    <div class="row2">
+      <div class="fld"><label>Início</label><input id="mStart" type="time" value="18:00"></div>
+      <div class="fld"><label>Duração</label><select id="mDur"><option value="30">30 min</option><option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option></select></div>
+    </div>
+    <div class="sheet-actions">
+      <button class="btn-ghost" id="mCancel">Cancelar</button>
+      <button class="btn-primary" id="mSave">Adicionar bloco</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   🔌 CONEXÃO COM O n8n
+   1) Cole abaixo a URL do seu webhook do n8n.
+   2) O app envia POST (JSON): { message, conversationId, subject, history }
+        - history = array das mensagens anteriores [{who,text}]
+   3) Responda com JSON: { "reply": "texto da resposta", "subject": "mat", "title": "opcional" }
+        - reply  : o texto que a Faísca vai dizer (pode usar <b>negrito</b>)
+        - subject: (opcional) id da matéria pra arquivar. Se vier, sobrescreve o palpite local.
+        - title  : (opcional) título da conversa no histórico.
+   4) IDs de matéria válidos: mat, bio, his, qui, fis, red, geo, ing, ger
+   ============================================================ */
+  const N8N_WEBHOOK_URL = 'https://jotaperc.app.n8n.cloud/webhook/estudai';
+
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Matérias (id, nome, cor, emoji) + palavras-chave do palpite local de classificação.
+  // O n8n pode sobrescrever a matéria devolvendo "subject" na resposta.
+  const subjects=[
+    {id:'mat',name:'Matemática',emoji:'➗',ac:'#C9F24A',wide:true,kw:['função','equação','porcentagem','regra de três','geometria','área','probabilidade','fração','juros','matemática','conta','número','gráfico']},
+    {id:'bio',name:'Biologia',emoji:'🧬',ac:'#36D6A0',kw:['célula','mitose','meiose','gene','dna','ecologia','evolução','biologia','vírus','bactéria','fotossíntese','corpo','organismo']},
+    {id:'his',name:'História',emoji:'🏛️',ac:'#F0A85E',wide:true,kw:['história','revolução','guerra','vargas','idade média','colônia','império','nazismo','feudal','ditadura']},
+    {id:'qui',name:'Química',emoji:'⚗️',ac:'#B69CFF',kw:['química','tabela periódica','ligação','mol','ácido','base','ph','orgânica','reação','átomo','elemento','estequiometria']},
+    {id:'fis',name:'Física',emoji:'🪐',ac:'#5CB8F7',kw:['física','newton','força','energia','cinemática','velocidade','eletricidade','onda','movimento','aceleração','termodinâmica']},
+    {id:'red',name:'Redação',emoji:'✍️',ac:'#FF8FB1',kw:['redação','dissertação','dissertativa','tese','argumento','repertório','introdução','conclusão','parágrafo','coesão','texto','enem']},
+    {id:'geo',name:'Geografia',emoji:'🌎',ac:'#7FE06A',kw:['geografia','clima','globalização','relevo','urbanização','geopolítica','população','agro','continente']},
+    {id:'ing',name:'Inglês',emoji:'🌐',ac:'#F5C84B',kw:['inglês','english','verb','present perfect','phrasal','conditional','vocabulary','tradução','tradu']},
+    {id:'ger',name:'Geral',emoji:'✨',ac:'#9aa0b0',kw:[]},
+  ];
+  const byId=Object.fromEntries(subjects.map(s=>[s.id,s]));
+  function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function detect(msg){const m=norm(msg);let best='ger',score=0;subjects.forEach(s=>{let c=0;s.kw.forEach(k=>{if(m.includes(norm(k)))c++;});if(c>score){score=c;best=s.id;}});return best;}
+
+  // Estado em memória (vazio — começa limpo)
+  let conversations=[], nextId=1, currentId=null;
+
+  const messagesEl=document.getElementById('messages'),welcome=document.getElementById('welcome'),
+        input=document.getElementById('input'),send=document.getElementById('send'),
+        viewChat=document.getElementById('viewChat'),subjTag=document.getElementById('subjTag');
+  const mascot='<svg viewBox="0 0 240 264"><use href="#faisca3d"/></svg>';
+  function timeAgo(t){const d=(Date.now()-t)/1000;if(d<60)return'agora';if(d<3600)return Math.floor(d/60)+' min';if(d<86400)return Math.floor(d/3600)+' h';return Math.floor(d/86400)+' d';}
+  function getConv(id){return conversations.find(c=>c.id===id);}
+
+  function bubble(who,text,animate){const m=document.createElement('div');m.className='msg '+who;m.innerHTML=(who==='bot'?'<div class="av">'+mascot+'</div>':'')+'<div class="bubble">'+text+'</div>';if(!animate)m.style.animation='none';messagesEl.appendChild(m);scrollDown();return m;}
+  function scrollDown(){viewChat.scrollTop=viewChat.scrollHeight;}
+  function typing(){const m=document.createElement('div');m.className='msg bot';m.id='typing';m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';messagesEl.appendChild(m);scrollDown();}
+  function typeBubble(text){const m=document.createElement('div');m.className='msg bot';m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble"><span class="tt"></span><span class="caret"></span></div>';messagesEl.appendChild(m);const tt=m.querySelector('.tt'),caret=m.querySelector('.caret');const html=formatReply(text);if(reduce){tt.innerHTML=html;caret.remove();scrollDown();return;}tt.style.whiteSpace='pre-wrap';const plain=text.replace(/<[^>]+>/g,'');let i=0;(function tick(){if(i<=plain.length){tt.textContent=plain.slice(0,i++);scrollDown();setTimeout(tick,16);}else{tt.style.whiteSpace='';tt.innerHTML=html;caret.remove();}})();}
+  // Formata a resposta em parágrafos e listas (texto indentado, legível)
+  function formatReply(raw){
+    const t=String(raw).replace(/\r/g,'').trim();
+    const blocks=[];let list=null;
+    t.split('\n').forEach(line=>{
+      const s=line.trim();if(!s){list=null;return;}
+      const ol=s.match(/^(\d+)[).]\s+(.*)/),ul=s.match(/^[-*•]\s+(.*)/);
+      if(ol){if(!list||list.t!=='ol'){list={t:'ol',items:[]};blocks.push(list);}list.items.push(ol[2]);}
+      else if(ul){if(!list||list.t!=='ul'){list={t:'ul',items:[]};blocks.push(list);}list.items.push(ul[1]);}
+      else{list=null;blocks.push({t:'p',html:s});}
+    });
+    const out=blocks.map(b=>b.t==='p'?'<p>'+b.html+'</p>':'<'+b.t+'>'+b.items.map(i=>'<li>'+i+'</li>').join('')+'</'+b.t+'>').join('');
+    return out||('<p>'+t+'</p>');
+  }
+
+  function parseCards(reply){
+    const txt=String(reply).replace(/<\/?b>/gi,'').trim();
+    const segs = txt.includes('|||') ? txt.split('|||') : txt.split(/\n+|(?=\bP:)/i);
+    const cards=[];
+    for(const s of segs){
+      const mq=s.match(/P:\s*([\s\S]*?)\s*(?:~|—|::|\bR:)/i);
+      const ma=s.match(/R:\s*([\s\S]+)/i);
+      if(mq && ma){
+        const q=mq[1].trim().replace(/^\d+[).\-]\s*/,'').replace(/[~—-]\s*$/,'').trim();
+        const a=ma[1].trim().replace(/\|+\s*$/,'').trim();
+        if(q && a) cards.push({q,a});
+      }
+    }
+    return cards;
+  }
+  function renderFlashcards(cards){
+    const m=document.createElement('div');m.className='msg bot';
+    const deck=cards.map((c,i)=>`<div class="fcard"><div class="q"><span class="n">${i+1}</span><span>${escapeHtml(c.q)}</span></div><div class="rev">ver resposta ↓</div><div class="a">${escapeHtml(c.a)}</div></div>`).join('');
+    m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble fcwrap"><div class="fcintro">🃏 Seus flashcards — toque pra revelar a resposta:</div><div class="deck">'+deck+'</div></div>';
+    messagesEl.appendChild(m);
+    m.querySelectorAll('.fcard').forEach(el=>el.addEventListener('click',()=>el.classList.toggle('open')));
+    scrollDown();
+  }
+
+  function parseQuiz(reply){
+    const txt=String(reply).replace(/<\/?b>/gi,'').trim();
+    const segs = txt.includes('|||') ? txt.split('|||') : txt.split(/\n+/);
+    let q='',correct='',explica='';const options=[];
+    segs.forEach(seg=>{
+      const s=seg.trim();if(!s)return;
+      if(/^(Q|PERGUNTA)\s*:/i.test(s)){q=s.replace(/^[^:]*:\s*/,'').trim();return;}
+      if(/^(CERTA|RESPOSTA|GABARITO)\s*:/i.test(s)){const mm=s.replace(/^[^:]*:\s*/,'').match(/([A-E])/i);if(mm)correct=mm[1].toUpperCase();return;}
+      if(/^(EXPLICA|EXPLICAÇÃO|EXPLICACAO)\s*:/i.test(s)){explica=s.replace(/^[^:]*:\s*/,'').trim();return;}
+      const m=s.match(/^([A-E])\s*[):.\-]?\s*(.+)/i);
+      if(m){options.push({L:m[1].toUpperCase(),text:m[2].trim()});}
+    });
+    if(q && options.length>=2 && correct && options.some(o=>o.L===correct)) return {q,options,correct,explica};
+    return null;
+  }
+  function renderQuiz(conv,quiz){
+    const m=document.createElement('div');m.className='msg bot';
+    const opts=quiz.options.map(o=>`<button class="qopt" data-l="${o.L}"><span class="ql">${o.L}</span><span>${escapeHtml(o.text)}</span></button>`).join('');
+    m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble quizwrap"><div class="qtag">🎯 Modo Prova</div><div class="qq">'+escapeHtml(quiz.q)+'</div><div class="qopts">'+opts+'</div><div class="qfb"></div></div>';
+    messagesEl.appendChild(m);
+    const fb=m.querySelector('.qfb');
+    m.querySelectorAll('.qopt').forEach(btn=>btn.addEventListener('click',()=>{
+      if(m.dataset.done)return;m.dataset.done='1';
+      const ok=btn.dataset.l===quiz.correct;
+      conv.provaScore.total++;if(ok)conv.provaScore.right++;
+      m.querySelectorAll('.qopt').forEach(b=>{b.disabled=true;b.classList.add('locked');if(b.dataset.l===quiz.correct)b.classList.add('right');});
+      if(!ok)btn.classList.add('wrong');
+      fb.innerHTML='<div class="qres '+(ok?'ok':'no')+'">'+(ok?'✅ Acertou!':'❌ A resposta certa era '+quiz.correct)+'</div>'
+        +(quiz.explica?'<div class="qexp">'+escapeHtml(quiz.explica)+'</div>':'')
+        +'<div class="qbar"><span class="qscore">Placar: '+conv.provaScore.right+'/'+conv.provaScore.total+'</span><button class="qnext">Próxima questão →</button></div>';
+      fb.querySelector('.qnext').addEventListener('click',()=>nextProva(conv));
+      scrollDown();
+    }));
+    scrollDown();
+  }
+  async function nextProva(conv){
+    conv.messages.push({who:'me',text:'Próxima questão'});
+    typing();
+    const payload='Modo Prova sobre "'+conv.provaTopic+'". Gere UMA nova questão de múltipla escolha DIFERENTE das anteriores, no MESMO formato, separando os campos com " ||| ": Q: <pergunta> ||| A: <alt> ||| B: <alt> ||| C: <alt> ||| D: <alt> ||| CERTA: <letra A-D> ||| EXPLICA: <explicação curta>.';
+    try{
+      const data=await askFaisca(payload,conv);
+      document.getElementById('typing')?.remove();
+      const ans=data.reply ?? data.text ?? '...';
+      conv.messages.push({who:'bot',text:ans});
+      const quiz=parseQuiz(ans);
+      if(quiz)renderQuiz(conv,quiz);else typeBubble(ans);
+    }catch(e){document.getElementById('typing')?.remove();bubble('bot','⚠️ Não consegui carregar a próxima questão. Tenta de novo.',true);}
+  }
+
+  function setTag(subId){const s=byId[subId]||byId.ger;subjTag.style.setProperty('--ac',s.ac);subjTag.style.borderColor=s.ac;subjTag.innerHTML=`<span class="e">${s.emoji}</span> ${s.name}`;subjTag.classList.add('on');}
+
+  function autogrow(){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,140)+'px';send.disabled=!input.value.trim();}
+  input.addEventListener('input',autogrow);
+  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}});
+  send.addEventListener('click',handleSend);
+
+  // ====== MODOS DA FAÍSCA (diferenciais do Conversar) ======
+  const MODES={
+    prova:{emoji:'🎯',name:'Modo Prova',ph:'Sobre qual assunto quer ser testado(a)?',
+      wrap:t=>`Modo Prova sobre "${t}". Crie UMA questão de múltipla escolha nível ENEM/vestibular. Responda APENAS neste formato, sem nada antes ou depois, separando os campos com " ||| ": Q: <pergunta> ||| A: <alternativa> ||| B: <alternativa> ||| C: <alternativa> ||| D: <alternativa> ||| CERTA: <letra A-D> ||| EXPLICA: <explicação curta do porquê>.`},
+    flash:{emoji:'🃏',name:'Flashcards',ph:'Qual tema você quer revisar em flashcards?',
+      wrap:t=>`Gere de 5 a 8 flashcards de revisão sobre "${t}". Responda APENAS com os cartões, sem nenhum texto antes ou depois, cada cartão EXATAMENTE no formato "P: pergunta ~ R: resposta" e separe os cartões com " ||| ". Não use numeração nem listas.`},
+    camadas:{emoji:'🪜',name:'Explica em camadas',ph:'O que você quer entender de verdade?',
+      wrap:t=>`Explique "${t}" em três camadas, com <b>negrito</b> no título de cada uma: <b>1) Pra criança</b> (bem simples), <b>2) Nível vestibular</b> e <b>3) Aprofundado</b>. Use exemplos do dia a dia.`},
+    cacaerro:{emoji:'🔍',name:'Caça-erro',ph:'Cole sua resposta, redação ou exercício aqui...',
+      wrap:t=>`Sou estudante. Analise o que vou colar, aponte com gentileza os erros e — principalmente — mostre COMO melhorar cada ponto, com exemplos. Aqui está: "${t}"`}
+  };
+  let activeMode=null;
+  const modeChip=document.getElementById('modeChip');
+  function setMode(key){
+    if(activeMode===key){clearMode();return;}
+    activeMode=key;const m=MODES[key];
+    document.querySelectorAll('.mode').forEach(el=>el.classList.toggle('active',el.dataset.mode===key));
+    input.placeholder=m.ph;
+    modeChip.innerHTML=`<span class="c">${m.emoji} <b>${m.name}</b> ligado</span><button class="x" id="modeX" title="Sair do modo">✕</button>`;
+    modeChip.classList.add('on');
+    document.getElementById('modeX').addEventListener('click',clearMode);
+    input.focus();
+  }
+  function clearMode(){
+    activeMode=null;
+    document.querySelectorAll('.mode').forEach(el=>el.classList.remove('active'));
+    modeChip.classList.remove('on');modeChip.innerHTML='';
+    input.placeholder='Pergunte qualquer coisa pra Faísca...';
+  }
+  document.querySelectorAll('.mode').forEach(el=>el.addEventListener('click',()=>setMode(el.dataset.mode)));
+
+  // ---- Chamada ao n8n ----
+  async function askFaisca(message,conv){
+    const history=conv.messages.slice(0,-1).map(m=>({role:m.who==='me'?'user':'assistant',content:m.text}));
+    const r=await fetch(N8N_WEBHOOK_URL,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({message,conversationId:conv.id,subject:conv.subject,history})
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const ct=r.headers.get('content-type')||'';
+    return ct.includes('application/json') ? await r.json() : {reply:await r.text()};
+  }
+
+  async function enviar(text,payloadText,renderMode){
+    payloadText=payloadText||text;
+    if(welcome.isConnected)welcome.remove();
+    let conv;
+    if(currentId==null){
+      const sub=detect(text);
+      conv={id:nextId++,subject:sub,title:text.length>46?text.slice(0,46)+'…':text,time:Date.now(),messages:[]};
+      conversations.unshift(conv);currentId=conv.id;setTag(sub);
+      toast(byId[sub].emoji+' Salvo em '+byId[sub].name,byId[sub].ac);updateHistCount();
+    }else conv=getConv(currentId);
+    conv.messages.push({who:'me',text});conv.time=Date.now();
+    bubble('me',text,true);typing();
+
+    try{
+      const data=await askFaisca(payloadText,conv);
+      document.getElementById('typing')?.remove();
+      // n8n pode reclassificar a matéria — mas só no começo, pra não ficar pulando de matéria
+      const early=conv.messages.filter(m=>m.who==='me').length<=1;
+      if(data.subject && byId[data.subject] && data.subject!==conv.subject && (conv.subject==='ger'||early)){conv.subject=data.subject;setTag(data.subject);}
+      if(data.title) conv.title=data.title;
+      const answer = data.reply ?? data.text ?? '...';
+      conv.messages.push({who:'bot',text:answer});
+      if(renderMode==='prova'){const quiz=parseQuiz(answer);if(quiz){conv.provaTopic=text;if(!conv.provaScore)conv.provaScore={right:0,total:0};renderQuiz(conv,quiz);return;}}
+      if(renderMode==='flash'){const cards=parseCards(answer);if(cards.length>=2){renderFlashcards(cards);return;}}
+      typeBubble(answer);
+    }catch(err){
+      document.getElementById('typing')?.remove();
+      bubble('bot','⚠️ Não consegui falar com o servidor agora. Confira a conexão com o n8n e tente de novo.',true);
+    }
+  }
+  function handleSend(){
+    const t=input.value.trim();if(!t)return;input.value='';autogrow();
+    if(activeMode){const payload=MODES[activeMode].wrap(t);const rm=activeMode;clearMode();enviar(t,payload,rm);}
+    else enviar(t);
+  }
+
+  function openConv(id){currentId=id;const conv=getConv(id);if(welcome.isConnected)welcome.remove();messagesEl.innerHTML='';conv.messages.forEach(m=>bubble(m.who,m.who==='bot'?formatReply(m.text):m.text,false));setTag(conv.subject);switchView('chat');scrollDown();}
+
+  document.getElementById('newBtn').addEventListener('click',()=>{
+    currentId=null;messagesEl.innerHTML='';subjTag.classList.remove('on');clearMode();
+    if(!welcome.isConnected)document.querySelector('.stream').insertBefore(welcome,messagesEl);
+    input.value='';autogrow();switchView('chat');input.focus();
+  });
+
+  document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>switchView(t.dataset.view)));
+  function switchView(v){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));
+    document.getElementById('viewChat').classList.toggle('on',v==='chat');
+    document.getElementById('viewHist').classList.toggle('on',v==='hist');
+    document.getElementById('viewSched').classList.toggle('on',v==='sched');
+    if(v==='hist')renderHistory();
+    if(v==='sched')renderSched();
+  }
+  function updateHistCount(){document.getElementById('histCount').textContent=conversations.length;}
+
+  function renderHistory(){
+    const boards=document.getElementById('boards');boards.innerHTML='';
+    subjects.forEach(s=>{
+      const items=conversations.filter(c=>c.subject===s.id);
+      if(s.id==='ger'&&items.length===0)return;
+      const b=document.createElement('div');
+      b.className='board';b.style.setProperty('--ac',s.ac);
+      b.innerHTML=`
+        <div class="bd-head">
+          <div class="bd-emoji"><svg viewBox="0 0 132 92" aria-hidden="true"><use href="#fx-${s.id}"/></svg></div>
+          <div class="bd-meta"><div class="bd-title">${s.name}</div><div class="bd-sub">${items.length} ${items.length===1?'conversa':'conversas'}</div></div>
+          <div class="bd-count">${items.length}</div>
+        </div>
+        <div class="hcards">${
+          items.length? items.map(c=>`<button class="hcard" data-id="${c.id}"><div class="ht">${c.title}</div><div class="hm"><span>🕓 ${timeAgo(c.time)}</span><span>💬 ${c.messages.length} msg</span></div></button>`).join('')
+          : '<div class="empty">Ainda sem faíscas aqui, converse pra começar.</div>'
+        }</div>`;
+      boards.appendChild(b);
+    });
+    boards.querySelectorAll('.hcard').forEach(el=>el.addEventListener('click',()=>openConv(+el.dataset.id)));
+  }
+
+  let toastT;
+  function toast(text,ac){const el=document.getElementById('toast');el.style.borderColor=ac||'var(--faisca)';el.innerHTML=text;el.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>el.classList.remove('on'),2600);}
+
+  const fab=document.getElementById('heroMascot'),eyes=document.getElementById('eyesTrack');
+  if(!reduce){addEventListener('mousemove',e=>{if(!welcome.isConnected)return;const dx=e.clientX/innerWidth-.5,dy=e.clientY/innerHeight-.5;eyes.style.transform=`translate(${dx*6}px,${dy*5}px)`;});}
+  fab.addEventListener('click',()=>{
+    fab.classList.remove('pop');void fab.offsetWidth;fab.classList.add('pop');
+    const r=fab.getBoundingClientRect();
+    for(let i=0;i<9;i++){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 100 100');s.classList.add('burst');s.innerHTML='<use href="#sparkle"/>';s.style.left=(r.left+r.width/2)+'px';s.style.top=(r.top+r.height/2)+'px';const a=Math.random()*6.28,d=45+Math.random()*55;s.style.setProperty('--bx',Math.cos(a)*d+'px');s.style.setProperty('--by',Math.sin(a)*d+'px');s.style.animation='bz .65s ease-out forwards';document.body.appendChild(s);setTimeout(()=>s.remove(),700);}
+  });
+
+  const stars=document.getElementById('stars');
+  for(let i=0;i<60;i++){const d=document.createElement('div');d.className='star';const sz=Math.random()*2+1;d.style.width=d.style.height=sz+'px';d.style.left=Math.random()*100+'%';d.style.top=Math.random()*100+'%';d.style.setProperty('--d',(2+Math.random()*4)+'s');d.style.animationDelay=(Math.random()*4)+'s';stars.appendChild(d);}
+
+  // ====== HORÁRIOS (grade da semana) ======
+  const DAYS=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
+  const DAYS_FULL=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'];
+  const SCHED_KEY='estudai_horarios_v1';
+  let schedule=loadSched();
+  function loadSched(){try{return JSON.parse(localStorage.getItem(SCHED_KEY))||[]}catch(e){return[]}}
+  function saveSched(){try{localStorage.setItem(SCHED_KEY,JSON.stringify(schedule))}catch(e){}}
+  function todayIdx(){const g=new Date().getDay();return g===0?6:g-1;} // 0=Seg .. 6=Dom
+  function fmtDur(m){if(m<60)return m+' min';const h=Math.floor(m/60),r=m%60;return r?h+'h'+r:h+'h';}
+  function endTime(start,dur){const [h,mi]=start.split(':').map(Number);const t=h*60+mi+dur;return String(Math.floor(t/60)%24).padStart(2,'0')+':'+String(t%60).padStart(2,'0');}
+  function escapeHtml(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+  let editingId=null;
+  function renderSched(){
+    const grid=document.getElementById('sgrid'),statsEl=document.getElementById('sstats');
+    if(!schedule.length){
+      grid.style.display='block';
+      grid.innerHTML='<div class="sempty"><div class="em">🗓️</div><h3>Sua semana está livre</h3><p>Você decide: adicione blocos de estudo e monte a rotina do seu jeito.</p></div>';
+      statsEl.innerHTML='';return;
+    }
+    grid.style.display='grid';
+    const ti=todayIdx();
+    grid.innerHTML=DAYS.map((d,i)=>{
+      const blocks=schedule.filter(b=>b.day===i).sort((a,b)=>a.start.localeCompare(b.start));
+      const body=blocks.length?blocks.map(b=>{
+        const s=byId[b.subject]||byId.ger;
+        return '<div class="blk'+(b.done?' done':'')+'" style="--ac:'+s.ac+'" data-id="'+b.id+'" data-topic="'+escapeHtml(b.topic||'')+'" data-subj="'+escapeHtml(s.name)+'">'
+          +'<div class="blktop">'
+            +'<button class="chk'+(b.done?' on':'')+'" data-act="chk" title="Marcar como feito">✓</button>'
+            +'<span class="bt"><span>'+s.emoji+'</span> '+b.start+'–'+endTime(b.start,b.dur)+'</span>'
+            +'<span class="acts"><button data-act="ed" title="Editar">✎</button><button class="delx" data-act="del" title="Remover">✕</button></span>'
+          +'</div>'
+          +'<div class="bk">'+(b.topic?escapeHtml(b.topic):s.name)+'</div>'
+          +'<div class="blkbot"><span class="bd2">'+s.name+' · '+fmtDur(b.dur)+'</span><button class="study" data-act="study">estudar →</button></div>'
+        +'</div>';
+      }).join(''):'<div class="none">livre</div>';
+      return '<div class="daycol'+(i===ti?' today':'')+'">'
+        +'<div class="dayhead"><span class="dn">'+d+'</span>'+(i===ti?'<span class="today-dot">hoje</span>':'')+'</div>'
+        +body+'</div>';
+    }).join('');
+    const total=schedule.reduce((a,b)=>a+b.dur,0);
+    const done=schedule.filter(b=>b.done).length;
+    const pct=schedule.length?Math.round(done/schedule.length*100):0;
+    statsEl.innerHTML='<span class="spill"><b>'+schedule.length+'</b> blocos</span>'
+      +'<span class="spill"><b>'+fmtDur(total)+'</b> por semana</span>'
+      +'<span class="spill prog"><span class="pbar"><span style="width:'+pct+'%"></span></span> '+done+'/'+schedule.length+' feitos</span>';
+  }
+
+  // ações nos blocos (delegação — listener único)
+  document.getElementById('sgrid').addEventListener('click',e=>{
+    const btn=e.target.closest('[data-act]');if(!btn)return;
+    const blk=btn.closest('.blk');if(!blk)return;const id=blk.dataset.id,act=btn.dataset.act;
+    if(act==='del'){schedule=schedule.filter(b=>b.id!==id);saveSched();renderSched();}
+    else if(act==='chk'){const b=schedule.find(x=>x.id===id);if(b){b.done=!b.done;saveSched();renderSched();}}
+    else if(act==='ed'){const b=schedule.find(x=>x.id===id);if(b)openModal(b);}
+    else if(act==='study'){const tp=blk.dataset.topic,sj=blk.dataset.subj;input.value=tp?('Me ajuda a estudar: '+tp):('Vamos estudar '+sj+'?');switchView('chat');autogrow();input.focus();}
+  });
+
+  // modal: adicionar / editar bloco
+  const modal=document.getElementById('modal');
+  function openModal(block){
+    editingId=block?block.id:null;
+    document.getElementById('mSubject').innerHTML=subjects.map(s=>'<option value="'+s.id+'">'+s.emoji+' '+s.name+'</option>').join('');
+    document.getElementById('mDay').innerHTML=DAYS_FULL.map((d,i)=>'<option value="'+i+'">'+d+'</option>').join('');
+    document.getElementById('mTitle').textContent=block?'Editar bloco':'Novo bloco de estudo';
+    document.getElementById('mSave').textContent=block?'Salvar':'Adicionar bloco';
+    document.getElementById('mSubject').value=block?block.subject:'mat';
+    document.getElementById('mTopic').value=block?(block.topic||''):'';
+    document.getElementById('mDay').value=block?block.day:todayIdx();
+    document.getElementById('mStart').value=block?block.start:'18:00';
+    document.getElementById('mDur').value=block?String(block.dur):'60';
+    modal.classList.add('on');
+  }
+  function closeModal(){modal.classList.remove('on');}
+  document.getElementById('addBlockBtn').addEventListener('click',()=>openModal(null));
+  document.getElementById('mCancel').addEventListener('click',closeModal);
+  modal.addEventListener('click',e=>{if(e.target===modal)closeModal();});
+  document.getElementById('mSave').addEventListener('click',()=>{
+    const subject=document.getElementById('mSubject').value;
+    const topic=document.getElementById('mTopic').value.trim();
+    const day=+document.getElementById('mDay').value;
+    const start=document.getElementById('mStart').value||'18:00';
+    const dur=+document.getElementById('mDur').value;
+    if(editingId){const b=schedule.find(x=>x.id===editingId);if(b)Object.assign(b,{subject,topic,day,start,dur});toast('✏️ Bloco atualizado',byId[subject].ac);}
+    else{schedule.push({id:'b'+Date.now()+Math.random().toString(36).slice(2,5),subject,topic,day,start,dur,done:false});toast(byId[subject].emoji+' Bloco adicionado',byId[subject].ac);}
+    saveSched();closeModal();renderSched();
+  });
+
+  updateHistCount();
+</script>
+</body>
+</html>
