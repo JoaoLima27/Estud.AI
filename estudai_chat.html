@@ -197,7 +197,6 @@
   .sempty .em{font-size:2.4rem}
   .sempty h3{font-family:var(--disp);color:var(--text);font-weight:700;margin:10px 0 6px;font-size:1.2rem}
 
-  /* modal */
   .modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(8,8,14,.62);backdrop-filter:blur(4px)}
   .modal.on{display:flex}
   .sheet{width:100%;max-width:440px;background:var(--surface-2);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 30px 70px rgba(0,0,0,.5);animation:sheetIn .25s cubic-bezier(.2,.8,.2,1)}
@@ -213,7 +212,6 @@
   .btn-ghost:hover{background:rgba(244,238,225,.06)}
   .btn-primary{flex:1.3;padding:12px;border-radius:12px;border:none;background:var(--faisca);color:var(--ink);font-family:var(--disp);font-weight:700;cursor:pointer;transition:transform .15s}
   .btn-primary:hover{transform:translateY(-1px)}
-  /* ============ RESPONSIVO: tablet e celular ============ */
 
   /* Tablet (≤900px) */
   @media(max-width:900px){
@@ -235,7 +233,6 @@
     .msg{max-width:94%}
     .composer{padding:10px 12px calc(10px + env(safe-area-inset-bottom))}
     .hint{margin-top:6px}
-    /* grade da semana empilha em lista vertical */
     .sgrid{grid-template-columns:1fr;overflow-x:visible;gap:12px}
     .daycol{min-height:auto}
     .sintro{align-items:flex-start}
@@ -243,7 +240,7 @@
     .bubble.quizwrap,.bubble.fcwrap{width:auto;max-width:100%}
   }
 
-  /* Celular (≤480px): abas viram só ícones */
+  /* Celular (≤480px)*/
   @media(max-width:480px){
     .tab .tl{display:none}
     .tab{padding:9px 12px;font-size:1rem;gap:0}
@@ -254,17 +251,14 @@
     .welcome h1{margin-top:16px}
   }
 
-  /* Campos do modal empilham em telas bem estreitas */
   @media(max-width:440px){.row2{grid-template-columns:1fr}}
 
-  /* Modal vira bottom-sheet no celular */
   @media(max-width:560px){
     .modal{align-items:flex-end;padding:0}
     .sheet{max-width:none;border-radius:22px 22px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom));animation:sheetUp .28s cubic-bezier(.2,.8,.2,1)}
   }
   @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 
-  /* Touch: sem hover, mostrar as ações dos blocos sempre */
   @media(hover:none){
     .acts{opacity:1}
     .blk .bt{white-space:normal}
@@ -321,7 +315,6 @@
   </symbol>
   <symbol id="sparkle" viewBox="0 0 100 100"><path d="M50 4C54 32 68 46 96 50C68 54 54 68 50 96C46 68 32 54 4 50C32 46 46 32 50 4Z"/></symbol>
 
-  <!-- Faísca pequena reutilizável (corpo lime + óculos + sorriso) -->
   <symbol id="fxmini" viewBox="0 0 100 100">
     <use href="#sparkle" fill="url(#bodyGrad)"/>
     <circle cx="38" cy="53" r="11" fill="#14131c"/><circle cx="62" cy="53" r="11" fill="#14131c"/>
@@ -331,7 +324,6 @@
     <path d="M44 70 Q50 76 57 70" stroke="#14131c" stroke-width="3.2" fill="none" stroke-linecap="round"/>
   </symbol>
 
-  <!-- Faísca + elemento de cada matéria -->
   <symbol id="fx-mat" viewBox="0 0 132 92">
     <use href="#fxmini" x="0" y="18" width="58" height="58"/>
     <g transform="translate(64,18)"><rect x="0" y="6" width="60" height="46" rx="7" fill="#15141d" stroke="#C9F24A" stroke-width="2.6"/>
@@ -474,23 +466,10 @@
 </div>
 
 <script>
-/* ============================================================
-   🔌 CONEXÃO COM O n8n
-   1) Cole abaixo a URL do seu webhook do n8n.
-   2) O app envia POST (JSON): { message, conversationId, subject, history }
-        - history = array das mensagens anteriores [{who,text}]
-   3) Responda com JSON: { "reply": "texto da resposta", "subject": "mat", "title": "opcional" }
-        - reply  : o texto que a Faísca vai dizer (pode usar <b>negrito</b>)
-        - subject: (opcional) id da matéria pra arquivar. Se vier, sobrescreve o palpite local.
-        - title  : (opcional) título da conversa no histórico.
-   4) IDs de matéria válidos: mat, bio, his, qui, fis, red, geo, ing, ger
-   ============================================================ */
   const N8N_WEBHOOK_URL = 'https://jotaperc.app.n8n.cloud/webhook/estudai';
 
   const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  // Matérias (id, nome, cor, emoji) + palavras-chave do palpite local de classificação.
-  // O n8n pode sobrescrever a matéria devolvendo "subject" na resposta.
   const subjects=[
     {id:'mat',name:'Matemática',emoji:'➗',ac:'#C9F24A',wide:true,kw:['função','equação','porcentagem','regra de três','geometria','área','probabilidade','fração','juros','matemática','conta','número','gráfico']},
     {id:'bio',name:'Biologia',emoji:'🧬',ac:'#36D6A0',kw:['célula','mitose','meiose','gene','dna','ecologia','evolução','biologia','vírus','bactéria','fotossíntese','corpo','organismo']},
@@ -506,7 +485,6 @@
   function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
   function detect(msg){const m=norm(msg);let best='ger',score=0;subjects.forEach(s=>{let c=0;s.kw.forEach(k=>{if(m.includes(norm(k)))c++;});if(c>score){score=c;best=s.id;}});return best;}
 
-  // Estado em memória (vazio — começa limpo)
   let conversations=[], nextId=1, currentId=null;
 
   const messagesEl=document.getElementById('messages'),welcome=document.getElementById('welcome'),
@@ -520,7 +498,7 @@
   function scrollDown(){viewChat.scrollTop=viewChat.scrollHeight;}
   function typing(){const m=document.createElement('div');m.className='msg bot';m.id='typing';m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div>';messagesEl.appendChild(m);scrollDown();}
   function typeBubble(text){const m=document.createElement('div');m.className='msg bot';m.innerHTML='<div class="av">'+mascot+'</div><div class="bubble"><span class="tt"></span><span class="caret"></span></div>';messagesEl.appendChild(m);const tt=m.querySelector('.tt'),caret=m.querySelector('.caret');const html=formatReply(text);if(reduce){tt.innerHTML=html;caret.remove();scrollDown();return;}tt.style.whiteSpace='pre-wrap';const plain=text.replace(/<[^>]+>/g,'');let i=0;(function tick(){if(i<=plain.length){tt.textContent=plain.slice(0,i++);scrollDown();setTimeout(tick,16);}else{tt.style.whiteSpace='';tt.innerHTML=html;caret.remove();}})();}
-  // Formata a resposta em parágrafos e listas (texto indentado, legível)
+
   function formatReply(raw){
     const t=String(raw).replace(/\r/g,'').trim();
     const blocks=[];let list=null;
@@ -615,7 +593,7 @@
   input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();handleSend();}});
   send.addEventListener('click',handleSend);
 
-  // ====== MODOS DA FAÍSCA (diferenciais do Conversar) ======
+  // ====== MODOS DA FAÍSCA  ======
   const MODES={
     prova:{emoji:'🎯',name:'Modo Prova',ph:'Sobre qual assunto quer ser testado(a)?',
       wrap:t=>`Modo Prova sobre "${t}". Crie UMA questão de múltipla escolha nível ENEM/vestibular. Responda APENAS neste formato, sem nada antes ou depois, separando os campos com " ||| ": Q: <pergunta> ||| A: <alternativa> ||| B: <alternativa> ||| C: <alternativa> ||| D: <alternativa> ||| CERTA: <letra A-D> ||| EXPLICA: <explicação curta do porquê>.`},
@@ -675,7 +653,6 @@
     try{
       const data=await askFaisca(payloadText,conv);
       document.getElementById('typing')?.remove();
-      // n8n pode reclassificar a matéria — mas só no começo, pra não ficar pulando de matéria
       const early=conv.messages.filter(m=>m.who==='me').length<=1;
       if(data.subject && byId[data.subject] && data.subject!==conv.subject && (conv.subject==='ger'||early)){conv.subject=data.subject;setTag(data.subject);}
       if(data.title) conv.title=data.title;
@@ -798,7 +775,6 @@
       +'<span class="spill prog"><span class="pbar"><span style="width:'+pct+'%"></span></span> '+done+'/'+schedule.length+' feitos</span>';
   }
 
-  // ações nos blocos (delegação — listener único)
   document.getElementById('sgrid').addEventListener('click',e=>{
     const btn=e.target.closest('[data-act]');if(!btn)return;
     const blk=btn.closest('.blk');if(!blk)return;const id=blk.dataset.id,act=btn.dataset.act;
@@ -808,7 +784,6 @@
     else if(act==='study'){const tp=blk.dataset.topic,sj=blk.dataset.subj;input.value=tp?('Me ajuda a estudar: '+tp):('Vamos estudar '+sj+'?');switchView('chat');autogrow();input.focus();}
   });
 
-  // modal: adicionar / editar bloco
   const modal=document.getElementById('modal');
   function openModal(block){
     editingId=block?block.id:null;
