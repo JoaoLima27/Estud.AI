@@ -171,7 +171,6 @@
 <body>
 <div id="progress"></div>
 
-<!-- ===== Símbolos reutilizáveis (avatares pequenos + faísca) ===== -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
   <radialGradient id="bodyGrad" cx="36%" cy="26%" r="82%"><stop offset="0%" stop-color="#EEFFA3"/><stop offset="48%" stop-color="#C9F24A"/><stop offset="100%" stop-color="#8FB820"/></radialGradient>
   <linearGradient id="vHi" gradientUnits="userSpaceOnUse" x1="120" y1="12" x2="120" y2="130"><stop offset="0%" stop-color="#fff" stop-opacity=".55"/><stop offset="100%" stop-color="#fff" stop-opacity="0"/></linearGradient>
@@ -210,7 +209,6 @@
   </div>
 </nav>
 
-<!-- HERO -->
 <header class="hero" id="top">
   <div class="glow"></div>
   <svg class="spark-float" style="top:22%;left:8%;width:24px;animation:drift 6s ease-in-out infinite"><use href="#sparkle"/></svg>
@@ -313,10 +311,6 @@
 
 <script>
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-  /* ===================== LINK DO APP REAL (Vercel) =====================
-     👉 Cole aqui o endereço do seu app hospedado na Vercel.
-     É a ÚNICA linha que você precisa trocar.                            */
   const APP_URL = "https://estud-ai-xi.vercel.app/estudai_chat.html";
   function openApp(q){
     const t=(q||'').trim();
@@ -328,11 +322,9 @@
   });
   const hasGSAP = !!window.gsap;
 
-  // ===== Barra de progresso =====
   const bar=document.getElementById('progress');
   addEventListener('scroll',()=>{const h=document.documentElement;bar.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+'%';});
 
-  // ===== 1+2. Faísca: segue o cursor (olhos + corpo) =====
   const lean=document.getElementById('mascotLean'), eyes=document.getElementById('eyesTrack');
   if(!reduce){
     addEventListener('mousemove',e=>{
@@ -342,7 +334,6 @@
     });
   }
 
-  // ===== 2. Reage ao clique (pulo elástico + explosão de faíscas) =====
   const hero=document.querySelector('.hero'), heroMascot=document.getElementById('heroMascot'), bounce=document.getElementById('mascotBounce');
   function heroBurst(){
     const r=heroMascot.getBoundingClientRect(), hr=hero.getBoundingClientRect();
@@ -362,7 +353,6 @@
     heroBurst();
   });
 
-  // ===== 3. Hero cinematográfico (GSAP) =====
   if(hasGSAP && !reduce){
     gsap.registerPlugin(ScrollTrigger);
     const tl=gsap.timeline({defaults:{ease:'power3.out'}});
@@ -372,22 +362,18 @@
       .from('.hero-cta .btn',{y:20,opacity:0,stagger:.12,duration:.5},'-=.3')
       .from('#mascotBounce',{scale:.4,opacity:0,duration:1,ease:'back.out(1.7)'},'-=.9');
 
-    // parallax no scroll (profundidade)
     gsap.to('.hero .glow',{yPercent:55,scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
     gsap.to('#mascotScroll',{yPercent:28,scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
     gsap.to('.hero h1',{yPercent:-22,opacity:.25,scrollTrigger:{trigger:'.hero',start:'top top',end:'bottom top',scrub:true}});
 
-    // entradas em cascata das seções
     gsap.set('.rv',{opacity:0,y:34});
     ScrollTrigger.batch('.rv',{start:'top 86%',onEnter:b=>gsap.to(b,{opacity:1,y:0,stagger:.1,duration:.7,ease:'power3.out'})});
 
-    // linha dos passos se desenhando
     ScrollTrigger.create({trigger:'.steps',start:'top 75%',once:true,onEnter:()=>document.querySelector('.steps').classList.add('in')});
   } else {
     document.querySelector('.steps')?.classList.add('in');  // fallback: tudo visível
   }
 
-  // ===== 4. Chat: digita letra por letra =====
   const body=document.getElementById('chatBody'),input=document.getElementById('chatInput'),btn=document.getElementById('sendBtn');
   const mascotSVG='<svg viewBox="0 0 240 264"><use href="#faisca3d"/></svg>';
   function addMsg(text,who){const m=document.createElement('div');m.className='msg '+who;m.innerHTML=(who==='bot'?'<div class="av">'+mascotSVG+'</div>':'')+'<div class="bubble">'+text+'</div>';body.appendChild(m);body.scrollTop=body.scrollHeight;return m;}
@@ -403,10 +389,6 @@
   }
   function sparkBurst(){const r=btn.getBoundingClientRect(),host=btn.parentElement,hr=host.getBoundingClientRect();for(let i=0;i<6;i++){const s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 100 100');s.classList.add('burst');s.innerHTML='<use href="#sparkle"/>';s.style.left=(r.left-hr.left+16)+'px';s.style.top=(r.top-hr.top+16)+'px';const a=Math.random()*6.28;s.style.setProperty('--bx',Math.cos(a)*40+'px');s.style.setProperty('--by',Math.sin(a)*40+'px');s.style.animation='burst .6s ease-out forwards';host.appendChild(s);setTimeout(()=>s.remove(),650);}}
 
-  // ===== INTEGRAÇÃO FUTURA (n8n) =====
-  // Troque o miolo por:
-  //   const r = await fetch('https://SEU-N8N/webhook/estudai',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:texto})});
-  //   const data = await r.json(); document.getElementById('typing')?.remove(); typeReply(data.reply);
   function enviar(texto){
     addMsg(texto,'me'); showTyping();
     setTimeout(()=>{document.getElementById('typing')?.remove();typeReply('Em breve eu respondo de verdade ✨ Por enquanto sou só uma demonstração — logo a equipe vai me conectar via n8n pra te ajudar pra valer!');},1000);
